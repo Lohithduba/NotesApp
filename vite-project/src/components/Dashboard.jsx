@@ -10,9 +10,8 @@ const Dashboard = () => {
   const [notes, setNotes] = useState([]);
   const [search, setSearch] = useState("");
   const [message, setMessage] = useState("");
-
-  const [editIndex, setEditIndex] = useState(null); // ✏️
-  const [editText, setEditText] = useState("");     // ✏️
+  const [editIndex, setEditIndex] = useState(null);
+  const [editText, setEditText] = useState("");
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -104,7 +103,6 @@ const Dashboard = () => {
       {notes.length > 0 && (
         <div className="card">
           <h3>Your Saved Notes</h3>
-
           <input
             type="text"
             className="search-input"
