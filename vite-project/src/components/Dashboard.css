@@ -1,13 +1,17 @@
+
 .dashboard-container {
   max-width: 600px;
   margin: 50px auto;
   padding: 32px;
-  background-color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.9); /* Transparent white */
+
   border-radius: 12px;
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
   text-align: center;
   font-family: Arial, sans-serif;
 }
+
+
 
 h2, h3 {
   color: #333;
