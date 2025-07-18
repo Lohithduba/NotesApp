@@ -1,11 +1,10 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 const Login = () => {
   const [username, setUsername] = useState("");
-  const [password, setPassword] = useState(""); // ✅ Add this
-  const [role, setRole] = useState("user");
+  const [password, setPassword] = useState("");
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -14,10 +13,7 @@ const Login = () => {
       const res = await fetch("http://localhost:5000/api/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          username,
-          password, // ✅ Send actual input
-        }),
+        body: JSON.stringify({ username, password }),
       });
 
       const data = await res.json();
@@ -28,10 +24,10 @@ const Login = () => {
         localStorage.setItem("token", data.token);
         navigate("/dashboard");
       } else {
-        alert(data.message);
+        alert(data.message || "Login failed");
       }
     } catch (error) {
-      console.error(error);
+      console.error("Login error:", error);
       alert("Login failed");
     }
   };
@@ -53,12 +49,14 @@ const Login = () => {
         onChange={(e) => setPassword(e.target.value)}
       />
 
-      <select value={role} onChange={(e) => setRole(e.target.value)}>
-        <option value="user">User</option>
-        <option value="admin">Admin</option>
-      </select>
-
       <button onClick={handleLogin}>Login</button>
+
+      <p>
+        Don’t have an account?{" "}
+        <Link to="/signup">
+          <button>Sign up</button>
+        </Link>
+      </p>
     </div>
   );
 };
