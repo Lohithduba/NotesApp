@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 const Signup = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState("user");
   const navigate = useNavigate();
 
   const handleSignup = async () => {
@@ -12,7 +11,7 @@ const Signup = () => {
       const res = await fetch("https://notes-app-blush-kappa.vercel.app/api/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password, role }),
+        body: JSON.stringify({ username, password, role: "user" }), 
       });
 
       const data = await res.json();
@@ -45,11 +44,6 @@ const Signup = () => {
         value={password}
         onChange={(e) => setPassword(e.target.value)}
       />
-
-      <select value={role} onChange={(e) => setRole(e.target.value)}>
-        <option value="user">User</option>
-        <option value="admin">Admin</option>
-      </select>
 
       <button onClick={handleSignup}>Sign Up</button>
     </div>
