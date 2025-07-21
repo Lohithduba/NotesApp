@@ -4,76 +4,84 @@ import "./Dashboard.css";
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
+  const token = localStorage.getItem("token");
 
-  const [currentTime, setCurrentTime] = useState(new Date());
   const [note, setNote] = useState("");
   const [notes, setNotes] = useState([]);
   const [search, setSearch] = useState("");
   const [message, setMessage] = useState("");
-  const [editIndex, setEditIndex] = useState(null);
+  const [editId, setEditId] = useState(null);
   const [editText, setEditText] = useState("");
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
+  const headers = {
+    Authorization: `Bearer ${token}`,
+    "Content-Type": "application/json",
+  };
 
+  // Load notes from MongoDB
   useEffect(() => {
-    const savedNotes = JSON.parse(localStorage.getItem(`notes-${user.username}`));
-    if (savedNotes) setNotes(savedNotes);
-  }, [user.username]);
+    fetch("http://localhost:5000/api/notes", { headers })
+      .then((res) => res.json())
+      .then((data) => setNotes(data))
+      .catch((err) => console.error("Fetch error:", err));
+  }, []);
 
   const handleNoteChange = (e) => setNote(e.target.value);
   const handleSearchChange = (e) => setSearch(e.target.value);
 
-  const handleSaveNote = () => {
+  const handleSaveNote = async () => {
     if (!note.trim()) return;
-    const newNote = {
-      text: note.trim(),
-      time: new Date().toLocaleString(),
-      done: false,
-    };
-    const updatedNotes = [...notes, newNote];
-    setNotes(updatedNotes);
-    localStorage.setItem(`notes-${user.username}`, JSON.stringify(updatedNotes));
+    const res = await fetch("http://localhost:5000/api/notes", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ text: note }),
+    });
+    const data = await res.json();
+    setNotes([...notes, data]);
     setNote("");
     setMessage("Note added!");
     setTimeout(() => setMessage(""), 2000);
   };
 
-  const handleDeleteNote = (index) => {
-    const updatedNotes = notes.filter((_, i) => i !== index);
-    setNotes(updatedNotes);
-    localStorage.setItem(`notes-${user.username}`, JSON.stringify(updatedNotes));
+  const handleDeleteNote = async (id) => {
+    await fetch(`http://localhost:5000/api/notes/${id}`, {
+      method: "DELETE",
+      headers,
+    });
+    setNotes(notes.filter((n) => n._id !== id));
     setMessage("Note deleted!");
     setTimeout(() => setMessage(""), 2000);
   };
 
-  const toggleDone = (index) => {
-    const updatedNotes = [...notes];
-    updatedNotes[index].done = !updatedNotes[index].done;
-    setNotes(updatedNotes);
-    localStorage.setItem(`notes-${user.username}`, JSON.stringify(updatedNotes));
+  const toggleDone = async (noteItem) => {
+    const res = await fetch(`http://localhost:5000/api/notes/${noteItem._id}`, {
+      method: "PATCH",
+      headers,
+      body: JSON.stringify({ done: !noteItem.done }),
+    });
+    const updated = await res.json();
+    setNotes(notes.map((n) => (n._id === updated._id ? updated : n)));
   };
 
-  const handleEdit = (index) => {
-    setEditIndex(index);
-    setEditText(notes[index].text);
+  const handleEdit = (noteItem) => {
+    setEditId(noteItem._id);
+    setEditText(noteItem.text);
   };
 
   const handleCancelEdit = () => {
-    setEditIndex(null);
+    setEditId(null);
     setEditText("");
   };
 
-  const handleSaveEdit = () => {
-    const updatedNotes = [...notes];
-    updatedNotes[editIndex].text = editText;
-    setNotes(updatedNotes);
-    localStorage.setItem(`notes-${user.username}`, JSON.stringify(updatedNotes));
-    setEditIndex(null);
+  const handleSaveEdit = async () => {
+    const res = await fetch(`http://localhost:5000/api/notes/${editId}`, {
+      method: "PATCH",
+      headers,
+      body: JSON.stringify({ text: editText }),
+    });
+    const updated = await res.json();
+    setNotes(notes.map((n) => (n._id === updated._id ? updated : n)));
+    setEditId(null);
     setEditText("");
     setMessage("Note updated!");
     setTimeout(() => setMessage(""), 2000);
@@ -86,7 +94,6 @@ const Dashboard = () => {
   return (
     <div className="dashboard-container">
       <h2>Welcome, {user.username}</h2>
-      <p>{currentTime.toLocaleString()}</p>
 
       <div className="card">
         <h3>Add a New Note</h3>
@@ -112,9 +119,9 @@ const Dashboard = () => {
           />
 
           <ul className="note-list">
-            {filteredNotes.map((n, index) => (
-              <li key={index} className="note-item">
-                {editIndex === index ? (
+            {filteredNotes.map((n) => (
+              <li key={n._id} className="note-item">
+                {editId === n._id ? (
                   <>
                     <textarea
                       value={editText}
@@ -122,7 +129,9 @@ const Dashboard = () => {
                       rows={3}
                     />
                     <button onClick={handleSaveEdit}>Save</button>
-                    <button onClick={handleCancelEdit} className="delete-btn">Cancel</button>
+                    <button onClick={handleCancelEdit} className="delete-btn">
+                      Cancel
+                    </button>
                   </>
                 ) : (
                   <>
@@ -136,11 +145,14 @@ const Dashboard = () => {
                       {n.text}
                     </div>
                     <div className="note-time">🕒 {n.time}</div>
-                    <button onClick={() => toggleDone(index)}>
+                    <button onClick={() => toggleDone(n)}>
                       {n.done ? "Undo" : "Mark Done"}
                     </button>
-                    <button onClick={() => handleEdit(index)}>Edit</button>
-                    <button onClick={() => handleDeleteNote(index)} className="delete-btn">
+                    <button onClick={() => handleEdit(n)}>Edit</button>
+                    <button
+                      onClick={() => handleDeleteNote(n._id)}
+                      className="delete-btn"
+                    >
                       Delete
                     </button>
                   </>
@@ -151,7 +163,9 @@ const Dashboard = () => {
         </div>
       )}
 
-      <button className="logout-btn" onClick={logout}>Logout</button>
+      <button className="logout-btn" onClick={logout}>
+        Logout
+      </button>
     </div>
   );
 };
