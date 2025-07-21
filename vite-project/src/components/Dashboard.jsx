@@ -86,7 +86,7 @@ const Dashboard = () => {
   return (
     <div className="dashboard-container">
       <h2>Welcome, {user.username}</h2>
-      <p>{currentTime.toLocaleString()}</p>
+      <p className="current-time">{currentTime.toLocaleString()}</p>
 
       <div className="card">
         <h3>Add a New Note</h3>
