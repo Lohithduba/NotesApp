@@ -4,111 +4,78 @@ import "./Dashboard.css";
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
-  const token = localStorage.getItem("token");
 
+  const [currentTime, setCurrentTime] = useState(new Date());
   const [note, setNote] = useState("");
   const [notes, setNotes] = useState([]);
   const [search, setSearch] = useState("");
   const [message, setMessage] = useState("");
-  const [editId, setEditId] = useState(null);
+  const [editIndex, setEditIndex] = useState(null);
   const [editText, setEditText] = useState("");
 
-  const headers = {
-    Authorization: `Bearer ${token}`,
-    "Content-Type": "application/json",
-  };
-
-  // Load notes on mount
   useEffect(() => {
-    if (!token) return;
-
-    fetch("http://localhost:5000/api/notes", { headers })
-      .then((res) => {
-        if (!res.ok) throw new Error("Failed to fetch notes");
-        return res.json();
-      })
-      .then((data) => setNotes(data))
-      .catch((err) => console.error("Fetch error:", err));
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    return () => clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    const savedNotes = JSON.parse(localStorage.getItem(`notes-${user.username}`));
+    if (savedNotes) setNotes(savedNotes);
+  }, [user.username]);
 
   const handleNoteChange = (e) => setNote(e.target.value);
   const handleSearchChange = (e) => setSearch(e.target.value);
 
-  const handleSaveNote = async () => {
+  const handleSaveNote = () => {
     if (!note.trim()) return;
-
-    try {
-      const res = await fetch("http://localhost:5000/api/notes", {
-        method: "POST",
-        headers,
-        body: JSON.stringify({ text: note }),
-      });
-      const data = await res.json();
-      setNotes([...notes, data]);
-      setNote("");
-      setMessage("Note added!");
-    } catch (err) {
-      console.error("Save error:", err);
-    }
-
+    const newNote = {
+      text: note.trim(),
+      time: new Date().toLocaleString(),
+      done: false,
+    };
+    const updatedNotes = [...notes, newNote];
+    setNotes(updatedNotes);
+    localStorage.setItem(`notes-${user.username}`, JSON.stringify(updatedNotes));
+    setNote("");
+    setMessage("Note added!");
     setTimeout(() => setMessage(""), 2000);
   };
 
-  const handleDeleteNote = async (id) => {
-    try {
-      await fetch(`http://localhost:5000/api/notes/${id}`, {
-        method: "DELETE",
-        headers,
-      });
-      setNotes(notes.filter((n) => n._id !== id));
-      setMessage("Note deleted!");
-    } catch (err) {
-      console.error("Delete error:", err);
-    }
-
+  const handleDeleteNote = (index) => {
+    const updatedNotes = notes.filter((_, i) => i !== index);
+    setNotes(updatedNotes);
+    localStorage.setItem(`notes-${user.username}`, JSON.stringify(updatedNotes));
+    setMessage("Note deleted!");
     setTimeout(() => setMessage(""), 2000);
   };
 
-  const toggleDone = async (noteItem) => {
-    try {
-      const res = await fetch(`http://localhost:5000/api/notes/${noteItem._id}`, {
-        method: "PATCH",
-        headers,
-        body: JSON.stringify({ done: !noteItem.done }),
-      });
-      const updated = await res.json();
-      setNotes(notes.map((n) => (n._id === updated._id ? updated : n)));
-    } catch (err) {
-      console.error("Toggle error:", err);
-    }
+  const toggleDone = (index) => {
+    const updatedNotes = [...notes];
+    updatedNotes[index].done = !updatedNotes[index].done;
+    setNotes(updatedNotes);
+    localStorage.setItem(`notes-${user.username}`, JSON.stringify(updatedNotes));
   };
 
-  const handleEdit = (noteItem) => {
-    setEditId(noteItem._id);
-    setEditText(noteItem.text);
+  const handleEdit = (index) => {
+    setEditIndex(index);
+    setEditText(notes[index].text);
   };
 
   const handleCancelEdit = () => {
-    setEditId(null);
+    setEditIndex(null);
     setEditText("");
   };
 
-  const handleSaveEdit = async () => {
-    try {
-      const res = await fetch(`http://localhost:5000/api/notes/${editId}`, {
-        method: "PATCH",
-        headers,
-        body: JSON.stringify({ text: editText }),
-      });
-      const updated = await res.json();
-      setNotes(notes.map((n) => (n._id === updated._id ? updated : n)));
-      setEditId(null);
-      setEditText("");
-      setMessage("Note updated!");
-    } catch (err) {
-      console.error("Edit error:", err);
-    }
-
+  const handleSaveEdit = () => {
+    const updatedNotes = [...notes];
+    updatedNotes[editIndex].text = editText;
+    setNotes(updatedNotes);
+    localStorage.setItem(`notes-${user.username}`, JSON.stringify(updatedNotes));
+    setEditIndex(null);
+    setEditText("");
+    setMessage("Note updated!");
     setTimeout(() => setMessage(""), 2000);
   };
 
@@ -119,21 +86,7 @@ const Dashboard = () => {
   return (
     <div className="dashboard-container">
       <h2>Welcome, {user.username}</h2>
-
-      {/* ✅ Debug Section */}
-      <div className="debug-box" style={{
-        background: "#f4f4f4",
-        padding: "12px",
-        borderRadius: "8px",
-        marginBottom: "20px",
-        fontSize: "14px",
-        border: "1px solid #ccc"
-      }}>
-        <strong>🔧 Debug Info:</strong><br />
-        👤 User: <code>{user.username}</code><br />
-        🗂 Notes Fetched: <code>{notes.length}</code><br />
-        🔐 Token: <code>{token ? token.slice(0, 20) + "..." : "No token"}</code>
-      </div>
+      <p>{currentTime.toLocaleString()}</p>
 
       <div className="card">
         <h3>Add a New Note</h3>
@@ -159,9 +112,9 @@ const Dashboard = () => {
           />
 
           <ul className="note-list">
-            {filteredNotes.map((n) => (
-              <li key={n._id} className="note-item">
-                {editId === n._id ? (
+            {filteredNotes.map((n, index) => (
+              <li key={index} className="note-item">
+                {editIndex === index ? (
                   <>
                     <textarea
                       value={editText}
@@ -183,14 +136,11 @@ const Dashboard = () => {
                       {n.text}
                     </div>
                     <div className="note-time">🕒 {n.time}</div>
-                    <button onClick={() => toggleDone(n)}>
+                    <button onClick={() => toggleDone(index)}>
                       {n.done ? "Undo" : "Mark Done"}
                     </button>
-                    <button onClick={() => handleEdit(n)}>Edit</button>
-                    <button
-                      onClick={() => handleDeleteNote(n._id)}
-                      className="delete-btn"
-                    >
+                    <button onClick={() => handleEdit(index)}>Edit</button>
+                    <button onClick={() => handleDeleteNote(index)} className="delete-btn">
                       Delete
                     </button>
                   </>
