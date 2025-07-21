@@ -6,12 +6,14 @@ const Signup = () => {
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
 
+  const BACKEND_URL = "http://localhost:5000"; // Or your deployed URL
+
   const handleSignup = async () => {
     try {
-      const res = await fetch("https://notes-app-blush-kappa.vercel.app/api/signup", {
+      const res = await fetch(`${BACKEND_URL}/api/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password, role: "user" }), 
+        body: JSON.stringify({ username, password }),
       });
 
       const data = await res.json();
@@ -20,10 +22,10 @@ const Signup = () => {
         alert("Signup successful. Please login.");
         navigate("/login");
       } else {
-        alert(data.message);
+        alert(data.message || "Signup failed");
       }
     } catch (error) {
-      console.error(error);
+      console.error("Signup error:", error);
       alert("Signup failed");
     }
   };

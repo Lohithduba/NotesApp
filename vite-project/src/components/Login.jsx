@@ -2,8 +2,7 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
-// ✅ Change this to your backend URL
-const BACKEND_URL = "http://localhost:5000"; // or "https://your-backend.onrender.com"
+const BACKEND_URL = "http://localhost:5000";
 
 const Login = () => {
   const [username, setUsername] = useState("");
@@ -24,7 +23,10 @@ const Login = () => {
 
       if (res.ok && data.token) {
         const payload = JSON.parse(atob(data.token.split(".")[1]));
-        login(payload.username, payload.role);
+
+        
+        login(payload.username);
+
         localStorage.setItem("token", data.token);
         navigate("/dashboard");
       } else {
@@ -37,14 +39,13 @@ const Login = () => {
   };
 
   return (
-    <div className="container" >
+    <div className="container">
       <h2>Login</h2>
 
       <input
         placeholder="Username"
         value={username}
         onChange={(e) => setUsername(e.target.value)}
-        
       />
 
       <input
@@ -52,22 +53,18 @@ const Login = () => {
         placeholder="Password"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
-      
       />
 
-      <button onClick={handleLogin} >Login</button>
+      <button onClick={handleLogin}>Login</button>
 
       <p>
         Don’t have an account?{" "}
         <Link to="/signup">
-          <button >Sign up</button>
+          <button>Sign up</button>
         </Link>
       </p>
     </div>
   );
 };
-
-
-
 
 export default Login;
