@@ -18,10 +18,15 @@ const Dashboard = () => {
     "Content-Type": "application/json",
   };
 
-  // Load notes from MongoDB
+  // Load notes on mount
   useEffect(() => {
+    if (!token) return;
+
     fetch("http://localhost:5000/api/notes", { headers })
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to fetch notes");
+        return res.json();
+      })
       .then((data) => setNotes(data))
       .catch((err) => console.error("Fetch error:", err));
   }, []);
@@ -31,36 +36,51 @@ const Dashboard = () => {
 
   const handleSaveNote = async () => {
     if (!note.trim()) return;
-    const res = await fetch("http://localhost:5000/api/notes", {
-      method: "POST",
-      headers,
-      body: JSON.stringify({ text: note }),
-    });
-    const data = await res.json();
-    setNotes([...notes, data]);
-    setNote("");
-    setMessage("Note added!");
+
+    try {
+      const res = await fetch("http://localhost:5000/api/notes", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ text: note }),
+      });
+      const data = await res.json();
+      setNotes([...notes, data]);
+      setNote("");
+      setMessage("Note added!");
+    } catch (err) {
+      console.error("Save error:", err);
+    }
+
     setTimeout(() => setMessage(""), 2000);
   };
 
   const handleDeleteNote = async (id) => {
-    await fetch(`http://localhost:5000/api/notes/${id}`, {
-      method: "DELETE",
-      headers,
-    });
-    setNotes(notes.filter((n) => n._id !== id));
-    setMessage("Note deleted!");
+    try {
+      await fetch(`http://localhost:5000/api/notes/${id}`, {
+        method: "DELETE",
+        headers,
+      });
+      setNotes(notes.filter((n) => n._id !== id));
+      setMessage("Note deleted!");
+    } catch (err) {
+      console.error("Delete error:", err);
+    }
+
     setTimeout(() => setMessage(""), 2000);
   };
 
   const toggleDone = async (noteItem) => {
-    const res = await fetch(`http://localhost:5000/api/notes/${noteItem._id}`, {
-      method: "PATCH",
-      headers,
-      body: JSON.stringify({ done: !noteItem.done }),
-    });
-    const updated = await res.json();
-    setNotes(notes.map((n) => (n._id === updated._id ? updated : n)));
+    try {
+      const res = await fetch(`http://localhost:5000/api/notes/${noteItem._id}`, {
+        method: "PATCH",
+        headers,
+        body: JSON.stringify({ done: !noteItem.done }),
+      });
+      const updated = await res.json();
+      setNotes(notes.map((n) => (n._id === updated._id ? updated : n)));
+    } catch (err) {
+      console.error("Toggle error:", err);
+    }
   };
 
   const handleEdit = (noteItem) => {
@@ -74,16 +94,21 @@ const Dashboard = () => {
   };
 
   const handleSaveEdit = async () => {
-    const res = await fetch(`http://localhost:5000/api/notes/${editId}`, {
-      method: "PATCH",
-      headers,
-      body: JSON.stringify({ text: editText }),
-    });
-    const updated = await res.json();
-    setNotes(notes.map((n) => (n._id === updated._id ? updated : n)));
-    setEditId(null);
-    setEditText("");
-    setMessage("Note updated!");
+    try {
+      const res = await fetch(`http://localhost:5000/api/notes/${editId}`, {
+        method: "PATCH",
+        headers,
+        body: JSON.stringify({ text: editText }),
+      });
+      const updated = await res.json();
+      setNotes(notes.map((n) => (n._id === updated._id ? updated : n)));
+      setEditId(null);
+      setEditText("");
+      setMessage("Note updated!");
+    } catch (err) {
+      console.error("Edit error:", err);
+    }
+
     setTimeout(() => setMessage(""), 2000);
   };
 
@@ -94,6 +119,21 @@ const Dashboard = () => {
   return (
     <div className="dashboard-container">
       <h2>Welcome, {user.username}</h2>
+
+      {/* ✅ Debug Section */}
+      <div className="debug-box" style={{
+        background: "#f4f4f4",
+        padding: "12px",
+        borderRadius: "8px",
+        marginBottom: "20px",
+        fontSize: "14px",
+        border: "1px solid #ccc"
+      }}>
+        <strong>🔧 Debug Info:</strong><br />
+        👤 User: <code>{user.username}</code><br />
+        🗂 Notes Fetched: <code>{notes.length}</code><br />
+        🔐 Token: <code>{token ? token.slice(0, 20) + "..." : "No token"}</code>
+      </div>
 
       <div className="card">
         <h3>Add a New Note</h3>
@@ -129,9 +169,7 @@ const Dashboard = () => {
                       rows={3}
                     />
                     <button onClick={handleSaveEdit}>Save</button>
-                    <button onClick={handleCancelEdit} className="delete-btn">
-                      Cancel
-                    </button>
+                    <button onClick={handleCancelEdit} className="delete-btn">Cancel</button>
                   </>
                 ) : (
                   <>
@@ -163,9 +201,7 @@ const Dashboard = () => {
         </div>
       )}
 
-      <button className="logout-btn" onClick={logout}>
-        Logout
-      </button>
+      <button className="logout-btn" onClick={logout}>Logout</button>
     </div>
   );
 };
