@@ -6,7 +6,7 @@ const Signup = () => {
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
 
-  const BACKEND_URL = "https://notes-app-blush-kappa.vercel.app/"; // Or your deployed URL
+  const BACKEND_URL = "https://notes-app-blush-kappa.vercel.app";
 
   const handleSignup = async () => {
     try {
