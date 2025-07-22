@@ -6,7 +6,7 @@ const Signup = () => {
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
 
-  const BACKEND_URL = "http://localhost:5000"; // Or your deployed URL
+  const BACKEND_URL = "https://notesapp-backend-3g4r.onrender.com"; // Or your deployed URL
 
   const handleSignup = async () => {
     try {
