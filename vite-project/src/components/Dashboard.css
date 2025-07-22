@@ -151,3 +151,18 @@ button:hover {
   margin: 10px 0 20px;
   color: #555;
 }
+
+.tags {
+  margin-top: 4px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tag {
+  background-color: #e0e7ff;
+  color: #1e40af;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+}

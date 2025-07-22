@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
-const BACKEND_URL = "https://notes-app-blush-kappa.vercel.app";
+const BACKEND_URL = "http://localhost:5000";
 
 const Login = () => {
   const [username, setUsername] = useState("");

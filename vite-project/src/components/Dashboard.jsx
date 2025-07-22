@@ -7,11 +7,13 @@ const Dashboard = () => {
 
   const [currentTime, setCurrentTime] = useState(new Date());
   const [note, setNote] = useState("");
+  const [tags, setTags] = useState("");
   const [notes, setNotes] = useState([]);
   const [search, setSearch] = useState("");
   const [message, setMessage] = useState("");
   const [editIndex, setEditIndex] = useState(null);
   const [editText, setEditText] = useState("");
+  const [editTags, setEditTags] = useState("");
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -26,6 +28,7 @@ const Dashboard = () => {
   }, [user.username]);
 
   const handleNoteChange = (e) => setNote(e.target.value);
+  const handleTagsChange = (e) => setTags(e.target.value);
   const handleSearchChange = (e) => setSearch(e.target.value);
 
   const handleSaveNote = () => {
@@ -34,11 +37,13 @@ const Dashboard = () => {
       text: note.trim(),
       time: new Date().toLocaleString(),
       done: false,
+      tags: tags.split(",").map((t) => t.trim()).filter(Boolean), // split and trim tags
     };
     const updatedNotes = [...notes, newNote];
     setNotes(updatedNotes);
     localStorage.setItem(`notes-${user.username}`, JSON.stringify(updatedNotes));
     setNote("");
+    setTags("");
     setMessage("Note added!");
     setTimeout(() => setMessage(""), 2000);
   };
@@ -61,26 +66,32 @@ const Dashboard = () => {
   const handleEdit = (index) => {
     setEditIndex(index);
     setEditText(notes[index].text);
+    setEditTags(notes[index].tags.join(", "));
   };
 
   const handleCancelEdit = () => {
     setEditIndex(null);
     setEditText("");
+    setEditTags("");
   };
 
   const handleSaveEdit = () => {
     const updatedNotes = [...notes];
     updatedNotes[editIndex].text = editText;
+    updatedNotes[editIndex].tags = editTags.split(",").map((t) => t.trim()).filter(Boolean);
     setNotes(updatedNotes);
     localStorage.setItem(`notes-${user.username}`, JSON.stringify(updatedNotes));
     setEditIndex(null);
     setEditText("");
+    setEditTags("");
     setMessage("Note updated!");
     setTimeout(() => setMessage(""), 2000);
   };
 
-  const filteredNotes = notes.filter((n) =>
-    n.text.toLowerCase().includes(search.toLowerCase())
+  const filteredNotes = notes.filter(
+    (n) =>
+      n.text.toLowerCase().includes(search.toLowerCase()) ||
+      n.tags.some((tag) => tag.toLowerCase().includes(search.toLowerCase()))
   );
 
   return (
@@ -96,6 +107,12 @@ const Dashboard = () => {
           rows={3}
           placeholder="Write a task or note..."
         />
+        <input
+          type="text"
+          placeholder="Add tags (comma separated)"
+          value={tags}
+          onChange={handleTagsChange}
+        />
         <button onClick={handleSaveNote}>Add Note</button>
         {message && <p style={{ color: "green" }}>{message}</p>}
       </div>
@@ -106,7 +123,7 @@ const Dashboard = () => {
           <input
             type="text"
             className="search-input"
-            placeholder="Search notes..."
+            placeholder="Search notes or tags..."
             value={search}
             onChange={handleSearchChange}
           />
@@ -120,6 +137,12 @@ const Dashboard = () => {
                       value={editText}
                       onChange={(e) => setEditText(e.target.value)}
                       rows={3}
+                    />
+                    <input
+                      type="text"
+                      value={editTags}
+                      onChange={(e) => setEditTags(e.target.value)}
+                      placeholder="Edit tags"
                     />
                     <button onClick={handleSaveEdit}>Save</button>
                     <button onClick={handleCancelEdit} className="delete-btn">Cancel</button>
@@ -135,7 +158,18 @@ const Dashboard = () => {
                     >
                       {n.text}
                     </div>
-                    <div className="note-time">🕒 {n.time}</div>
+                    <div className="note-time">{n.time}</div>
+                    <div className="note-tags">
+                      {n.tags && n.tags.length > 0 && (
+                        <span className="tags">
+                          {n.tags.map((tag, i) => (
+                            <span key={i} className="tag">
+                              #{tag}
+                            </span>
+                          ))}
+                        </span>
+                      )}
+                    </div>
                     <button onClick={() => toggleDone(index)}>
                       {n.done ? "Undo" : "Mark Done"}
                     </button>
